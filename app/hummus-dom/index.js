@@ -30,19 +30,19 @@ const addNode = function addNode(node) {
   console.debug('addNode: child appended');
 };
 
-const isNotEqual = function isEqual(oldNode, newNode) {
-  if (Map.isMap(newNode) && false === newNode.equals(oldNode)) {
+const isEqual = function isEqual(oldNode, newNode) {
+  if (Map.isMap(newNode) && Map.isMap(oldNode) && true === newNode.equals(oldNode)) {
     return true;
-  } else if ('string' === typeof newNode && newNode !== oldNode) {
+  } else if ('string' === typeof newNode && 'string' === typeof oldNode && newNode === oldNode) {
     return true;
   }
 
   return false;
 };
 
+// FIXME mess
 const updateNode = function updateNode(parent, newNode, oldNode, index = 0) {
-  console.debug('updateNode: start', index);
-  if (!oldNode && !newNode) { return; }
+  console.debug('updateNode: start index:', index);
 
   if (!oldNode) {
     console.debug('updateNode: no old node - append new node')
@@ -50,13 +50,12 @@ const updateNode = function updateNode(parent, newNode, oldNode, index = 0) {
   } else if (!newNode) {
     console.debug('updateNode: no new node - remove child node')
     parent.removeChild(parent.childNodes[index]);
-  } else if (isNotEqual(oldNode, newNode)) {
+  } else if (false === isEqual(oldNode, newNode)) {
     console.debug('updateNode: replace old node with new node');
     parent.replaceChild(createElement(newNode), parent.childNodes[index]);
   } else if (Map.isMap(newNode)) {
-    console.debug('updateNode: continue down')
     const maxNumber = Math.max(newNode.get('children').size, oldNode.get('children').size);
-    console.debug('updateNode: maxNum', maxNumber)
+    console.debug('updateNode: continue down - max num:', maxNumber)
 
     Array(maxNumber).fill().forEach((_, idx) => {
       updateNode(
@@ -66,9 +65,8 @@ const updateNode = function updateNode(parent, newNode, oldNode, index = 0) {
         idx
       );
     });
-
   } else {
-    console.debug('updateNode: no change?');
+    console.debug('updateNode: no change');
   }
 };
 
