@@ -10,3 +10,4 @@ Features:
 To Do:
 - [ ] Events
 - [ ] Better update method
+- [ ] Test suite
