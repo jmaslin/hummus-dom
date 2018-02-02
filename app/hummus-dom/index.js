@@ -2,11 +2,24 @@ import { fromJS, Map, List, merge, deepCopy } from 'immutable';
 
 let currentTree = Map();
 
+const setElementProp = function setElementProp(el, name, value) {
+  if (name === 'className') { name = 'class' }; // class is a reserved word in javascript
+  el.setAttribute(name, value);
+};
+
+const setProps = function setProps(el, propMap) {
+  propMap
+    .keySeq()
+    .toArray()
+    .forEach(key => setElementProp(el, key, propMap.get(key)));
+};
+
 const createElement = function createElement(node) {
   if (typeof node === 'string') {
     return document.createTextNode(node);
   }
   const el = document.createElement(node.get('type'));
+  setProps(el, node.get('props'));
 
   node.get('children')
     .map(createElement)
@@ -72,6 +85,7 @@ const updateNode = function updateNode(parent, newNode, oldNode, index = 0) {
 
 // Turn JSX syntax into plain objects
 const chickpea = function chickpea(type, props, ...children) {
+  if (!props) { props = {}; }
   return fromJS({ type, props, children });
 };
 

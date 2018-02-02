@@ -8,20 +8,22 @@ const exampleOne = function exampleOne() {
   const root = document.getElementById('root');
 
   const a = (
-    <ul>
-      <li>1</li>
-      <li>3</li>
+    <ul className="tehina">
+      <li style="font-size: 22px;">1</li>
       <li>2</li>
+      <li>3</li>
     </ul>
   )
 
   const b = (
     <ul>
       <li>wow</li>
-      <li>3</li>
       <li>2</li>
+      <li>3</li>
     </ul>
   )
+
+  console.debug(a);
 
   Hummus.addNode(a);
   setTimeout(() => {
@@ -46,6 +48,6 @@ const exampleTwo = function exampleTwo() {
 };
 
 document.addEventListener('DOMContentLoaded', () => {
-  // exampleOne();
-  exampleTwo();
+  exampleOne();
+  // exampleTwo();
 });
