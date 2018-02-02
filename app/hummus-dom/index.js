@@ -53,7 +53,6 @@ const isEqual = function isEqual(oldNode, newNode) {
   return false;
 };
 
-// FIXME mess
 const updateNode = function updateNode(parent, newNode, oldNode, index = 0) {
   console.debug('updateNode: start index:', index);
 
@@ -70,6 +69,7 @@ const updateNode = function updateNode(parent, newNode, oldNode, index = 0) {
     const maxNumber = Math.max(newNode.get('children').size, oldNode.get('children').size);
     console.debug('updateNode: continue down - max num:', maxNumber)
 
+    // Continue down the tree to update children nodes
     Array(maxNumber).fill().forEach((_, idx) => {
       updateNode(
         parent.childNodes[index],
