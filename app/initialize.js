@@ -17,7 +17,7 @@ const exampleOne = function exampleOne() {
 
   const b = (
     <ul>
-      <li>wow</li>
+      <li style="font-size: 44px;">1</li>
       <li>2</li>
       <li>3</li>
     </ul>
@@ -27,8 +27,9 @@ const exampleOne = function exampleOne() {
 
   Hummus.addNode(a);
   setTimeout(() => {
+    console.log('Update');
     Hummus.updateNode(root, b, a);
-  }, 1000)
+  }, 3000)
 };
 
 // input form handling and updating
