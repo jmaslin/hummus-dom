@@ -1,3 +1,9 @@
+body {
+  font-family: sans-serif;
+  width: 80%;
+  margin: auto;
+}
+
 .brunch {
   font-family: -apple-system, Sans-Serif;
   text-align: center;
@@ -6,5 +12,34 @@
 }
 
 .tehina {
-  color: blue;
+  padding-left: 0px;
+}
+
+.open {
+  color: green
+}
+
+.done {
+  color: red;
+  text-decoration: line-through;
+}
+
+.todo {
+  width: 200px;
+  padding: 10px;
+  border-bottom: 1px solid gray;
+}
+
+.number {
+  padding-left: 0;
+  padding-right: 12px;
+  font-size: small;
+}
+
+.todo * {
+  display: inline-block;
+}
+
+.todo button {
+  float: right;
 }

@@ -1,54 +1,83 @@
 /** @jsx Hummus.chickpea */
 
 import { Hummus } from 'hummus-dom';
-import { merge } from 'immutable';
+import { toJS, merge } from 'immutable';
 
-// simple dom update
-const exampleOne = function exampleOne() {
-  const root = document.getElementById('root');
+const root = document.getElementById('root');
 
-  const a = (
-    <ul className="tehina">
-      <li style="font-size: 22px;">1</li>
-      <li>2</li>
-      <li>3</li>
-    </ul>
-  )
+const TODO_ITEMS = [];
 
-  const b = (
-    <ul>
-      <li style="font-size: 44px;">1</li>
-      <li>2</li>
-      <li>3</li>
-    </ul>
-  )
+const getIndexOfItem = function getIndexOfItem(findItem) {
+  let index = -1;
+  TODO_ITEMS.forEach((item, idx) => {
+    if (item.text === findItem) { index = idx; }
+  });
 
-  console.debug(a);
-
-  Hummus.addNode(a);
-  setTimeout(() => {
-    console.log('Update');
-    Hummus.updateNode(root, b, a);
-  }, 3000)
+  return index;
 };
 
-// input form handling and updating
-const exampleTwo = function exampleTwo() {
-  const root = document.getElementById('root');
+const complete = function complete(e) {
+  const targetKey = e.target.getAttribute('key');
+  console.debug('CLICK EVENT', e.target, targetKey);
 
-  let oldVal = '';
-  const input = document.getElementById('type');
-  input.addEventListener('input', (event) => {
-    const newVal = (
-      <span>{input.value}</span>
-    );
+  // make sure not to apply event to deleted item
+  if (!targetKey) {
+    return;
+  } else {
+    const itemIndex = getIndexOfItem(targetKey);
 
-    Hummus.updateNode(root, newVal, oldVal);
-    oldVal = newVal;
-  });
+    TODO_ITEMS.splice(itemIndex, 1, {
+      text: targetKey,
+      complete: !TODO_ITEMS[itemIndex].complete
+    });
+
+    updateList();
+  }
+};
+
+// TODO: fix reference (get key)
+const deleteItem = function deleteItem(e) {
+  const itemToDelete = e.target.parentElement.childNodes[1].innerHTML;
+  console.debug('DELETE TODO FOR', itemToDelete);
+
+  const itemIndex = getIndexOfItem(itemToDelete);
+  TODO_ITEMS.splice(itemIndex, 1);
+
+  updateList();
+};
+
+const mapListItem = function mapListItem(item, index) {
+  const colorClass = item.complete === false ? 'open': 'done';
+  const numberEl = Hummus.chickpeaTwo('div', {className: 'number'}, [index+1+'']);
+  const listEl = Hummus.chickpeaTwo('div', {className: colorClass}, [item.text]);
+  const deleteBtn = Hummus.chickpeaTwo('button', {onClick: deleteItem}, ['remove']);
+  return Hummus.chickpeaTwo('div', {className: 'todo', key: item.text, onClick: complete}, [numberEl, listEl, deleteBtn]);
+};
+
+let listCopy = Hummus.chickpeaTwo('ul', {className: 'tehina'}, [])
+
+const button = document.getElementById('addItem');
+button.addEventListener('click', () => {
+  const addItem = document.getElementById('itemText').value.trim();
+  document.getElementById('itemText').value = '';
+
+  const exists = TODO_ITEMS.filter(item => item.text === addItem).length > 0;
+  if (exists || addItem === '') { return; }
+
+  TODO_ITEMS.push({ text: addItem, complete: false });
+
+  updateList();
+});
+
+const updateList = function updateList() {
+  const listItems = TODO_ITEMS.map(mapListItem);
+
+  const newList = Hummus.chickpeaTwo('ul', {className: 'tehina'}, listItems)
+
+  Hummus.updateNode(root, newList, listCopy);
+  listCopy = newList;
 };
 
 document.addEventListener('DOMContentLoaded', () => {
-  exampleOne();
-  // exampleTwo();
+  Hummus.addNode(listCopy);
 });
