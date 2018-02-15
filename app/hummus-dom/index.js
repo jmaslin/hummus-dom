@@ -193,7 +193,6 @@ const updateNode = function updateNode(parent, newNode, oldNode, index = 0) {
       } else {
         console.debug('KEY| Same position', key);
       }
-      // updateProps(oldNode.getIn(['children', newIndex]), val, immediateParent, newIndex);
     });
   } else if (bothMaps(oldNode, newNode)) {
     console.debug('updateNode: both maps');
@@ -205,96 +204,19 @@ const updateNode = function updateNode(parent, newNode, oldNode, index = 0) {
       updateProps(oldNode, newNode, parent, index);
     }
 
-    // if children are maps
-    // if (false) {
+    const maxNumber = Math.max(newNode.get('children').size, oldNode.get('children').size);
+    console.debug('updateNode: continue down - max num:', maxNumber)
 
-
-      // debugger;
-
-      // index += 1;
-
-      //
-      // if (Object.keys(oldNodeReference).length === 0) {
-      //   return;
-      // }
-      //
-      // console.debug('DEBUG oldNodeReference', oldNodeReference)
-
-      /*
-      const newItems = Array(maxNumber).fill().map((_, index) => {
-        const oldIndex = oldNodeReference[key]; // where child with KEY is in old node
-        const newVal = newNode.getIn(['children', index]) || null;
-        const oldVal = oldNode.getIn(['children', index]) || null;
-
-        // if (newVal === null) {
-        //   immediateParent.removeChild(oldIndex);
-        //   return;
-        // }
-        // const key = newVal.get('props').get('key');
-
-        console.debug('DEBUG for key', key, 'at old spot', oldNodeReference[key])
-
-        if (index > oldNode.get('children').size - 1) {
-          console.debug('DEBUG VAL HIGHER - Create element for key', key);
-          return { operation: 'create', node: newVal, key };
-        } else if (index > newNode.get('children').size - 1) {
-          return { operation: 'remove', node: oldVal, key };
-        }
-
-        if (false === key in oldNodeReference) {
-          console.debug('DEBUG Create element for key', key);
-          const old = immediateParent.childNodes[index];
-
-          return { operation: 'replace', old, nodeToAdd: newVal, key };
-          // return { operation: 'create', node: newVal, key };
-        } else if (false === isEqual(oldVal, newVal)) {
-          console.debug('DEBUG Replace element for key', key);
-          const old = immediateParent.childNodes[index];
-          console.debug('DEBUG', old, newVal)
-
-          return { operation: 'replace', old, nodeToAdd: newVal, key };
-        }
-
-        console.debug('DEBUG they are equal, do nothing')
-      });
-      */
-
-      // console.debug('NEW ITEMS', newItems);
-
-      // newItems.forEach((domChange) => {
-      //   if (!domChange) { return; }
-      //   console.debug('DEBUG domChange for key', domChange.key);
-      //   if (domChange.operation === 'replace') {
-      //     console.debug('DEBUG replace', domChange.nodeToAdd, domChange.old);
-      //     immediateParent.replaceChild(createElement(domChange.nodeToAdd), domChange.old);
-      //   } else if (domChange.operation === 'create') {
-      //     immediateParent.appendChild(createElement(domChange.node));
-      //   }
-      // });
-    // }
-    // else {
-      // if the above happens,
-      // do we want to skip the recursive function below
-      // for same parent.childNodes[index] (index ++)
-
-      console.debug(parent, parent.childNodes[index], newNode, oldNode);
-
-      const maxNumber = Math.max(newNode.get('children').size, oldNode.get('children').size);
-      console.debug('updateNode: continue down - max num:', maxNumber)
-
-      // Continue down the tree to update children nodes
-      Array(maxNumber).fill().forEach((_, idx) => {
-        console.debug('Continue down')
-        updateNode(
-          parent.childNodes[index],
-          newNode.get('children').get(idx),
-          oldNode.get('children').get(idx),
-          idx
-        );
-      });
-    // }
-
-
+    // Continue down the tree to update children nodes
+    Array(maxNumber).fill().forEach((_, idx) => {
+      console.debug('Continue down')
+      updateNode(
+        parent.childNodes[index],
+        newNode.get('children').get(idx),
+        oldNode.get('children').get(idx),
+        idx
+      );
+    });
 
   } else {
     console.debug('Replace old with new (both strings or Map/string combo)');
