@@ -37,7 +37,7 @@ const createElement = function createElement(node) {
     .map(createElement)
     .forEach(el.appendChild.bind(el));
 
-  console.log('createElement', el);
+  // console.debug('createElement', el);
 
   return el;
 };
@@ -48,6 +48,27 @@ const addNode = function addNode(node) {
 
   root.appendChild(createElement(node));
   console.debug('addNode: child appended');
+};
+
+const updateProps = function updateProps(oldNode, newNode, parent, index) {
+  console.debug('Props are different, update them');
+
+  const keysToDelete = oldNode
+    .get('props')
+    .keySeq()
+    .toSet()
+    .subtract(newNode.get('props').keySeq().toSet());
+
+  const changedProps = newNode.get('props').filter((val, key) => {
+    return val !== oldNode.get('props').get(key);
+  });
+
+  if (oldNode.getIn(['props', 'onClick'])) {
+    parent.childNodes[index].removeEventListener('click', oldNode.getIn(['props', 'onClick']));
+  }
+
+  deleteProps(parent.childNodes[index], keysToDelete);
+  setProps(parent.childNodes[index], changedProps);
 };
 
 /* IMMUTABLE HELPERS */
@@ -77,6 +98,15 @@ const isEqual = function isEqual(oldNode, newNode) {
   return false;
 };
 
+// TODO: check all children for consistency
+const childrenHaveKeys = function childrenHaveKeys(node) {
+  return undefined !== node.getIn(['children', 0, 'props', 'key']);
+};
+
+const childMapsAreDifferentSizes = function childMapsAreDifferentSizes(oldNode, newNode) {
+  return oldNode.get('children').size !== newNode.get('children').size;
+}
+
 /* JSX HELPERS */
 
 // Turn JSX syntax into plain objects
@@ -93,10 +123,14 @@ const chickpeaTwo = function chickpea(type, props, children) {
 /* VIRTUAL LOGIC */
 
 const updateNode = function updateNode(parent, newNode, oldNode, index = 0) {
+  if (index === 0) {
+    console.debug('--------------------------------')
+  }
   console.debug('updateNode: start index:', index);
+  console.debug(parent, newNode, oldNode);
 
   if (true === isEqual(oldNode, newNode)) {
-    console.debug('Tree is equal, do nothing.');
+    console.debug('updateNode: new/old is equal, do nothing');
     return;
   }
 
@@ -106,115 +140,161 @@ const updateNode = function updateNode(parent, newNode, oldNode, index = 0) {
   } else if (!newNode) {
     console.debug('updateNode: no new node - remove child node')
     parent.removeChild(parent.childNodes[index]);
+  } else if (childrenAreMaps(oldNode, newNode) && childrenHaveKeys(oldNode) && childMapsAreDifferentSizes(oldNode, newNode)) {
+    console.debug('updateNode: children are maps with keys and something has changed in list')
+    const immediateParent = parent.childNodes[index];
+
+    // find the index of DOMs with existing keys in oldNode
+    const oldNodeReference = {};
+    const newNodeReference = {};
+    newNode.get('children').forEach((val, index) => {
+      const domKey = val.getIn(['props', 'key']);
+      if (undefined !== domKey) {
+        newNodeReference[domKey] = index;
+      }
+    });
+    oldNode.get('children').forEach((val, index) => {
+      const domKey = val.getIn(['props', 'key']);
+      if (undefined !== domKey) {
+        oldNodeReference[domKey] = index;
+      }
+    });
+
+    console.debug('KEY| ref map', oldNodeReference, newNodeReference);
+
+    // if there is a removal, update indexes
+    Object.keys(oldNodeReference).forEach((oldKey) => {
+      if (false === oldKey in newNodeReference) {
+        const indexOfRemoval = oldNodeReference[oldKey];
+        const nodeToRemove = immediateParent.childNodes[indexOfRemoval];
+        console.debug('KEY| Remove key/node', oldKey)
+        Object.keys(oldNodeReference).forEach((oldKey) => {
+          if (oldNodeReference[oldKey] > indexOfRemoval) {
+            oldNodeReference[oldKey] = oldNodeReference[oldKey] - 1;
+          }
+        });
+        immediateParent.removeChild(nodeToRemove);
+      }
+    });
+
+    console.debug('KEY| ref map modified', oldNodeReference, newNodeReference);
+
+    // reverse so nodes are not overwritten
+    newNode.get('children').forEach((val, newIndex) => {
+      const key = val.getIn(['props', 'key']);
+      const oldIndex = oldNodeReference[key];
+
+      if (false === key in oldNodeReference) {
+        console.debug('KEY| New item', key);
+        immediateParent.appendChild(createElement(val));
+      } else if (newIndex !== oldIndex && immediateParent.childNodes[oldIndex]) {
+        console.debug('KEY| New position', key, 'is', newIndex);
+        immediateParent.replaceChild(createElement(val), immediateParent.childNodes[oldIndex]);
+      } else {
+        console.debug('KEY| Same position', key);
+      }
+      // updateProps(oldNode.getIn(['children', newIndex]), val, immediateParent, newIndex);
+    });
   } else if (bothMaps(oldNode, newNode)) {
+    console.debug('updateNode: both maps');
     if (newNode.get('type') !== oldNode.get('type')) {
       console.debug('Types are different, replace whole thing')
       parent.replaceChild(createElement(newNode), parent.childNodes[index]);
-
       return;
     } else if (false === newNode.get('props').equals(oldNode.get('props'))) {
-      console.debug('Props are different, update them');
-
-      const keysToDelete = oldNode
-        .get('props')
-        .keySeq()
-        .toSet()
-        .subtract(newNode.get('props').keySeq().toSet());
-
-      const changedProps = newNode.get('props').filter((val, key) => {
-        return val !== oldNode.get('props').get(key);
-      });
-
-      if (oldNode.getIn(['props', 'onClick'])) {
-        parent.childNodes[index].removeEventListener('click', oldNode.getIn(['props', 'onClick']));
-      }
-
-      deleteProps(parent.childNodes[index], keysToDelete);
-      setProps(parent.childNodes[index], changedProps);
+      updateProps(oldNode, newNode, parent, index);
     }
 
-    const maxNumber = Math.max(newNode.get('children').size, oldNode.get('children').size);
-    console.debug('updateNode: continue down - max num:', maxNumber)
-
     // if children are maps
-    // if (maxNumber > 1 && childrenAreMaps(oldNode, newNode)) {
-    //   // if ALL children have keys (ALL = edge case)
-    //   // get the children keys
-    //
-    //   const immediateParent = parent.childNodes[index];
-    //   const oldNodeReference = {};
-    //
-    //   oldNode.get('children').forEach((val, index) => {
-    //     const domKey = val.getIn(['props', 'key']);
-    //     oldNodeReference[domKey] = immediateParent.childNodes[index];
-    //   });
-    //
-    //   if (Object.keys(oldNodeReference).length === 0) {
-    //     return;
-    //   }
-    //
-    //   console.debug('DEBUG oldNodeReference', oldNodeReference)
-    //
-    //   const newItems = Array(maxNumber).fill().map((_, index) => {
-    //     const oldIndex = oldNodeReference[key]; // where child with KEY is in old node
-    //     const newVal = newNode.getIn(['children', index]) || null;
-    //     const oldVal = oldNode.getIn(['children', index]) || null;
-    //
-    //     if (newVal === null) {
-    //       immediateParent.removeChild(oldIndex);
-    //       return;
-    //     }
-    //     const key = newVal.get('props').get('key');
-    //
-    //     console.debug('DEBUG for key', key, 'at old spot', oldNodeReference[key])
-    //
-    //     if (index > oldNode.get('children').size - 1) {
-    //       console.debug('DEBUG VAL HIGHER - Create element for key', key);
-    //       return { operation: 'create', node: newVal, key };
-    //     } else if (index > newNode.get('children').size - 1) {
-    //       return { operation: 'remove', node: oldVal, key };
-    //     }
-    //
-    //     if (false === key in oldNodeReference) {
-    //       console.debug('DEBUG Create element for key', key);
-    //       const old = immediateParent.childNodes[index];
-    //
-    //       return { operation: 'replace', old, nodeToAdd: newVal, key };
-    //       // return { operation: 'create', node: newVal, key };
-    //     } else if (false === isEqual(oldVal, newVal)) {
-    //       console.debug('DEBUG Replace element for key', key);
-    //       const old = immediateParent.childNodes[index];
-    //       console.debug('DEBUG', old, newVal)
-    //
-    //       return { operation: 'replace', old, nodeToAdd: newVal, key };
-    //     }
-    //
-    //     console.debug('DEBUG they are equal, do nothing')
-    //   });
-    //
-    //   newItems.forEach((domChange) => {
-    //     if (!domChange) { return; }
-    //     console.debug('DEBUG domChange for key', domChange.key);
-    //     if (domChange.operation === 'replace') {
-    //       console.debug('DEBUG replace', domChange.nodeToAdd, domChange.old);
-    //       immediateParent.replaceChild(createElement(domChange.nodeToAdd), domChange.old);
-    //     } else if (domChange.operation === 'create') {
-    //       immediateParent.appendChild(createElement(domChange.node));
-    //     }
-    //   });
-    //
+    // if (false) {
+
+
+      // debugger;
+
+      // index += 1;
+
+      //
+      // if (Object.keys(oldNodeReference).length === 0) {
+      //   return;
+      // }
+      //
+      // console.debug('DEBUG oldNodeReference', oldNodeReference)
+
+      /*
+      const newItems = Array(maxNumber).fill().map((_, index) => {
+        const oldIndex = oldNodeReference[key]; // where child with KEY is in old node
+        const newVal = newNode.getIn(['children', index]) || null;
+        const oldVal = oldNode.getIn(['children', index]) || null;
+
+        // if (newVal === null) {
+        //   immediateParent.removeChild(oldIndex);
+        //   return;
+        // }
+        // const key = newVal.get('props').get('key');
+
+        console.debug('DEBUG for key', key, 'at old spot', oldNodeReference[key])
+
+        if (index > oldNode.get('children').size - 1) {
+          console.debug('DEBUG VAL HIGHER - Create element for key', key);
+          return { operation: 'create', node: newVal, key };
+        } else if (index > newNode.get('children').size - 1) {
+          return { operation: 'remove', node: oldVal, key };
+        }
+
+        if (false === key in oldNodeReference) {
+          console.debug('DEBUG Create element for key', key);
+          const old = immediateParent.childNodes[index];
+
+          return { operation: 'replace', old, nodeToAdd: newVal, key };
+          // return { operation: 'create', node: newVal, key };
+        } else if (false === isEqual(oldVal, newVal)) {
+          console.debug('DEBUG Replace element for key', key);
+          const old = immediateParent.childNodes[index];
+          console.debug('DEBUG', old, newVal)
+
+          return { operation: 'replace', old, nodeToAdd: newVal, key };
+        }
+
+        console.debug('DEBUG they are equal, do nothing')
+      });
+      */
+
+      // console.debug('NEW ITEMS', newItems);
+
+      // newItems.forEach((domChange) => {
+      //   if (!domChange) { return; }
+      //   console.debug('DEBUG domChange for key', domChange.key);
+      //   if (domChange.operation === 'replace') {
+      //     console.debug('DEBUG replace', domChange.nodeToAdd, domChange.old);
+      //     immediateParent.replaceChild(createElement(domChange.nodeToAdd), domChange.old);
+      //   } else if (domChange.operation === 'create') {
+      //     immediateParent.appendChild(createElement(domChange.node));
+      //   }
+      // });
+    // }
+    // else {
+      // if the above happens,
+      // do we want to skip the recursive function below
+      // for same parent.childNodes[index] (index ++)
+
+      console.debug(parent, parent.childNodes[index], newNode, oldNode);
+
+      const maxNumber = Math.max(newNode.get('children').size, oldNode.get('children').size);
+      console.debug('updateNode: continue down - max num:', maxNumber)
+
+      // Continue down the tree to update children nodes
+      Array(maxNumber).fill().forEach((_, idx) => {
+        console.debug('Continue down')
+        updateNode(
+          parent.childNodes[index],
+          newNode.get('children').get(idx),
+          oldNode.get('children').get(idx),
+          idx
+        );
+      });
     // }
 
-    // Continue down the tree to update children nodes
-    Array(maxNumber).fill().forEach((_, idx) => {
-      console.debug('Continue down')
-      updateNode(
-        parent.childNodes[index],
-        newNode.get('children').get(idx),
-        oldNode.get('children').get(idx),
-        idx
-      );
-    });
+
 
   } else {
     console.debug('Replace old with new (both strings or Map/string combo)');

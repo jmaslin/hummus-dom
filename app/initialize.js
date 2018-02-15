@@ -37,7 +37,8 @@ const complete = function complete(e) {
 
 // TODO: fix reference (get key)
 const deleteItem = function deleteItem(e) {
-  const itemToDelete = e.target.parentElement.childNodes[1].innerHTML;
+  console.debug('deleteItem', e.target.parentElement);
+  const itemToDelete = e.target.parentElement.getAttribute('key');
   console.debug('DELETE TODO FOR', itemToDelete);
 
   const itemIndex = getIndexOfItem(itemToDelete);
@@ -48,13 +49,14 @@ const deleteItem = function deleteItem(e) {
 
 const mapListItem = function mapListItem(item, index) {
   const colorClass = item.complete === false ? 'open': 'done';
-  const numberEl = Hummus.chickpeaTwo('div', {className: 'number'}, [index+1+'']);
+  // const numberEl = Hummus.chickpeaTwo('div', {className: 'number'}, [index+1+'']);
   const listEl = Hummus.chickpeaTwo('div', {className: colorClass}, [item.text]);
   const deleteBtn = Hummus.chickpeaTwo('button', {onClick: deleteItem}, ['remove']);
-  return Hummus.chickpeaTwo('div', {className: 'todo', key: item.text, onClick: complete}, [numberEl, listEl, deleteBtn]);
+  return Hummus.chickpeaTwo('div', {className: 'todo', key: item.text, onClick: complete}, [listEl, deleteBtn]);
 };
 
-let listCopy = Hummus.chickpeaTwo('ul', {className: 'tehina'}, [])
+// let listCopy = Hummus.chickpeaTwo('ul', {className: 'tehina'}, [])
+let listCopy;
 
 const button = document.getElementById('addItem');
 button.addEventListener('click', () => {
@@ -69,15 +71,25 @@ button.addEventListener('click', () => {
   updateList();
 });
 
+let first = true;
+
 const updateList = function updateList() {
   const listItems = TODO_ITEMS.map(mapListItem);
 
+  console.debug('TODO ITEMS:', TODO_ITEMS);
+
   const newList = Hummus.chickpeaTwo('ul', {className: 'tehina'}, listItems)
 
-  Hummus.updateNode(root, newList, listCopy);
+  if (first) {
+    Hummus.addNode(newList);
+    first = false;
+  } else {
+    Hummus.updateNode(root, newList, listCopy);
+  }
+
   listCopy = newList;
 };
 
 document.addEventListener('DOMContentLoaded', () => {
-  Hummus.addNode(listCopy);
+  // Hummus.addNode(listCopy);
 });

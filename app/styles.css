@@ -15,6 +15,10 @@ body {
   padding-left: 0px;
 }
 
+.tehina * {
+  font-size: 14px;
+}
+
 .open {
   color: green
 }
@@ -22,6 +26,7 @@ body {
 .done {
   color: red;
   text-decoration: line-through;
+  font-style: italic;
 }
 
 .todo {
