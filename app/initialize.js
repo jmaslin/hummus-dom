@@ -49,13 +49,13 @@ const deleteItem = function deleteItem(e) {
 
 const mapListItem = function mapListItem(item, index) {
   const colorClass = item.complete === false ? 'open': 'done';
+  const className = ['todo', 'list-group-item', colorClass].join(' ');
   // const numberEl = Hummus.chickpeaTwo('div', {className: 'number'}, [index+1+'']);
-  const listEl = Hummus.chickpeaTwo('div', {className: colorClass}, [item.text]);
-  const deleteBtn = Hummus.chickpeaTwo('button', {onClick: deleteItem}, ['remove']);
-  return Hummus.chickpeaTwo('div', {className: 'todo', key: item.text, onClick: complete}, [listEl, deleteBtn]);
+  const listEl = Hummus.chickpeaTwo('p', {}, [item.text]);
+  const deleteBtn = Hummus.chickpeaTwo('button', {className: 'btn btn-sm btn-delete btn btn-danger', onClick: deleteItem}, ['remove']);
+  return Hummus.chickpeaTwo('li', {className, key: item.text, onClick: complete}, [listEl, deleteBtn]);
 };
 
-// let listCopy = Hummus.chickpeaTwo('ul', {className: 'tehina'}, [])
 let listCopy;
 
 const button = document.getElementById('addItem');
@@ -78,7 +78,7 @@ const updateList = function updateList() {
 
   console.debug('TODO ITEMS:', TODO_ITEMS);
 
-  const newList = Hummus.chickpeaTwo('ul', {className: 'tehina'}, listItems)
+  const newList = Hummus.chickpeaTwo('ul', {className: 'list-group col-sm'}, listItems)
 
   if (first) {
     Hummus.addNode(newList);
@@ -91,5 +91,6 @@ const updateList = function updateList() {
 };
 
 document.addEventListener('DOMContentLoaded', () => {
+  console.debug('DOM loaded');
   // Hummus.addNode(listCopy);
 });
