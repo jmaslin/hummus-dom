@@ -4,16 +4,57 @@ import { Hummus } from 'hummus-dom';
 import { toJS, merge } from 'immutable';
 
 const root = document.getElementById('root');
+const storage = window.localStorage;
 
-const TODO_ITEMS = [];
+const demoList = [{
+  text: 'Hummus',
+  complete: false
+}, {
+  text: 'Carrots',
+  complete: false
+}, {
+  text: 'Pita Chips',
+  complete: true
+}];
+
+const getTodoList = function getTodoList() {
+  const list = JSON.parse(storage.todoList);
+  console.debug('list', list);
+  return list;
+};
+
+const updateTodoList = function updateTodoList(list) {
+  console.debug('update list', JSON.stringify(list));
+  storage.todoList = JSON.stringify(list);
+};
 
 const getIndexOfItem = function getIndexOfItem(findItem) {
   let index = -1;
-  TODO_ITEMS.forEach((item, idx) => {
+  const todoList = getTodoList();
+  todoList.forEach((item, idx) => {
     if (item.text === findItem) { index = idx; }
   });
 
   return index;
+};
+
+const setItemComplete = function setItemComplete(targetKey) {
+  const list = getTodoList();
+  const newList = list.map((item) => {
+    if (item.text === targetKey) {
+      item.complete = !item.complete;
+    }
+    return item;
+  });
+
+  return newList;
+};
+
+const removeItemFromList = function removeItemFromList(itemIndex) {
+  const newList = getTodoList();
+  newList.splice(itemIndex, 1);
+
+  return newList;
 };
 
 const complete = function complete(e) {
@@ -25,26 +66,24 @@ const complete = function complete(e) {
     return;
   } else {
     const itemIndex = getIndexOfItem(targetKey);
+    const newList = setItemComplete(targetKey);
 
-    TODO_ITEMS.splice(itemIndex, 1, {
-      text: targetKey,
-      complete: !TODO_ITEMS[itemIndex].complete
-    });
-
-    updateList();
+    updateTodoList(newList);
+    updateListDOM();
   }
 };
 
-// TODO: fix reference (get key)
+// TODO: fix reference (get key) if click on actual text
 const deleteItem = function deleteItem(e) {
   console.debug('deleteItem', e.target.parentElement);
   const itemToDelete = e.target.parentElement.getAttribute('key');
   console.debug('DELETE TODO FOR', itemToDelete);
 
   const itemIndex = getIndexOfItem(itemToDelete);
-  TODO_ITEMS.splice(itemIndex, 1);
+  const newList = removeItemFromList(itemIndex);
 
-  updateList();
+  updateTodoList(newList);
+  updateListDOM();
 };
 
 const mapListItem = function mapListItem(item, index) {
@@ -60,23 +99,26 @@ let listCopy;
 
 const button = document.getElementById('addItem');
 button.addEventListener('click', () => {
+  const list = getTodoList();
   const addItem = document.getElementById('itemText').value.trim();
+  const exists = list.filter(item => item.text === addItem).length > 0;
+
   document.getElementById('itemText').value = '';
 
-  const exists = TODO_ITEMS.filter(item => item.text === addItem).length > 0;
-  if (exists || addItem === '') { return; }
-
-  TODO_ITEMS.push({ text: addItem, complete: false });
-
-  updateList();
+  if (!exists && addItem !== '') {
+    list.push({ text: addItem, complete: false });
+    
+    updateTodoList(list);
+    updateListDOM();
+  }
 });
 
 let first = true;
 
-const updateList = function updateList() {
-  const listItems = TODO_ITEMS.map(mapListItem);
+const updateListDOM = function updateListDOM() {
+  console.debug('TODO ITEMS:', getTodoList());
 
-  console.debug('TODO ITEMS:', TODO_ITEMS);
+  const listItems = getTodoList().map(mapListItem);
 
   const newList = Hummus.chickpeaTwo('ul', {className: 'list-group col-sm'}, listItems)
 
@@ -92,5 +134,7 @@ const updateList = function updateList() {
 
 document.addEventListener('DOMContentLoaded', () => {
   console.debug('DOM loaded');
-  // Hummus.addNode(listCopy);
+  if (!storage.todoList || getTodoList().length === 0) { updateTodoList(demoList) }
+
+  updateListDOM();
 });
