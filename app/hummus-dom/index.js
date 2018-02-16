@@ -179,7 +179,6 @@ const updateNode = function updateNode(parent, newNode, oldNode, index = 0) {
 
     console.debug('KEY| ref map modified', oldNodeReference, newNodeReference);
 
-    // reverse so nodes are not overwritten
     newNode.get('children').forEach((val, newIndex) => {
       const key = val.getIn(['props', 'key']);
       const oldIndex = oldNodeReference[key];
