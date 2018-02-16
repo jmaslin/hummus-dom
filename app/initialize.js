@@ -6,6 +6,8 @@ import { toJS, merge } from 'immutable';
 const root = document.getElementById('root');
 const storage = window.localStorage;
 
+let listCopy;
+
 const demoList = [{
   text: 'Hummus',
   complete: false
@@ -95,7 +97,6 @@ const mapListItem = function mapListItem(item, index) {
   return Hummus.chickpeaTwo('li', {className, key: item.text, onClick: complete}, [listEl, deleteBtn]);
 };
 
-let listCopy;
 
 const button = document.getElementById('addItem');
 button.addEventListener('click', () => {
@@ -107,28 +108,19 @@ button.addEventListener('click', () => {
 
   if (!exists && addItem !== '') {
     list.push({ text: addItem, complete: false });
-    
     updateTodoList(list);
     updateListDOM();
   }
 });
 
-let first = true;
 
 const updateListDOM = function updateListDOM() {
   console.debug('TODO ITEMS:', getTodoList());
 
   const listItems = getTodoList().map(mapListItem);
-
   const newList = Hummus.chickpeaTwo('ul', {className: 'list-group col-sm'}, listItems)
 
-  if (first) {
-    Hummus.addNode(newList);
-    first = false;
-  } else {
-    Hummus.updateNode(root, newList, listCopy);
-  }
-
+  Hummus.updateNode(root, newList, listCopy);
   listCopy = newList;
 };
 
