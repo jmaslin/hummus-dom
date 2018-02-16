@@ -23,9 +23,9 @@ body {
   color: green
 }
 
-.done {
+.done p {
   color: red;
-  text-decoration: line-through;
+  text-decoration-line: line-through;
   font-style: italic;
 }
 
